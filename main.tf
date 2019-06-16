@@ -103,11 +103,6 @@ resource "kubernetes_daemonset" "traefik-ingress-controller" {
           image = "traefik:v1.7.12"
           name  = "traefik"
           port {
-            name = "http"
-            container_port = 80
-            host_port = 80
-          }
-          port {
             name = "https"
             container_port = 443
             host_port = 443
@@ -122,9 +117,8 @@ resource "kubernetes_daemonset" "traefik-ingress-controller" {
             "--api",
             "--kubernetes",
             "--logLevel=INFO",
-            "--defaultentrypoints=http,https",
+            "--defaultentrypoints=https",
             "--entrypoints=Name:https Address::443 TLS",
-            "--entrypoints=Name:http Address::80"
           ]
 
         }
