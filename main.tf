@@ -26,6 +26,65 @@ provider "kubernetes" {
   cluster_ca_certificate = "${base64decode(digitalocean_kubernetes_cluster.k8s-cluster.kube_config.0.cluster_ca_certificate)}"
 }
 
+resource "kubernetes_namespace" "helm" {
+  metadata {
+    name = "helm"
+  }
+}
+
+resource "kubernetes_service_account" "tiller" {
+  metadata {
+    name      = "tiller"
+    namespace = "helm"
+  }
+}
+
+resource "kubernetes_cluster_role_binding" "tiller" {
+  metadata {
+    name      = "tiller"
+  }
+  role_ref {
+    name      = "cluster-admin"
+    kind      = "ClusterRole"
+    api_group = "rbac.authorization.k8s.io"
+  }
+  subject {
+    kind      = "ServiceAccount"
+    name      = "tiller"
+    namespace = "helm"
+    api_group = ""
+  }
+}
+
+provider "helm" {
+  service_account = "tiller"
+  namespace = "helm"
+  kubernetes {
+    host = "${digitalocean_kubernetes_cluster.k8s-cluster.endpoint}"
+
+    client_certificate     = "${base64decode(digitalocean_kubernetes_cluster.k8s-cluster.kube_config.0.client_certificate)}"
+    client_key             = "${base64decode(digitalocean_kubernetes_cluster.k8s-cluster.kube_config.0.client_key)}"
+    cluster_ca_certificate = "${base64decode(digitalocean_kubernetes_cluster.k8s-cluster.kube_config.0.cluster_ca_certificate)}"
+  }
+}
+
+data "helm_repository" "keel-charts" {
+    name = "keel-charts"
+    url  = "https://charts.keel.sh"
+}
+
+resource "helm_release" "keel" {
+    name       = "keel"
+    repository = data.helm_repository.keel-charts.name
+    chart      = "keel"
+    namespace  = "keel"
+
+    set {
+      name = "helmProvider.enabled"
+      value = "false"
+    }
+}
+
 resource "kubernetes_cluster_role" "traefik-ingress-controller" {
     metadata {
         name = "traefik-ingress-controller"
