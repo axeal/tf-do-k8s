@@ -13,7 +13,7 @@ variable "cluster_region" {
 
 variable "cluster_version" {
   type = string
-  default = "1.14.1-do.3"
+  default = "1.14.1-do.4"
 }
 
 variable "cluster_worker_size" {
